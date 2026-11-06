@@ -252,6 +252,76 @@ public class CreditService {
     }
 
     /**
+     * Records a movement and applies it to the loan or card balance.
+     * A loan accepts only a payment. A card accepts a charge or a payment.
+     *
+     * @param productId loan or card identifier
+     * @param productKind LOAN or CARD
+     * @param type CHARGE or PAYMENT
+     * @param amount money amount
+     * @param payerCustomerId customer who pays; required for a payment
+     * @return created movement
+     */
+    public Single<CreditMovementDocument> createMovement(String productId, String productKind, String type,
+                                                        BigDecimal amount, String payerCustomerId) {
+        return Single.fromCallable(() -> postMovement(productId, productKind, type, amount, payerCustomerId))
+                .subscribeOn(Schedulers.io());
+    }
+
+    /**
+     * @param productId optional loan or card identifier
+     * @return every movement, or the movements of one product
+     */
+    public Single<List<CreditMovementDocument>> findMovements(String productId) {
+        return Single.fromCallable(() -> {
+            if (productId == null || productId.isBlank()) {
+                return movements.findAll();
+            }
+            return movements.findByProductIdOrderByCreatedAtDesc(productId);
+        }).subscribeOn(Schedulers.io());
+    }
+
+    /**
+     * @param id movement identifier
+     * @return one movement
+     */
+    public Single<CreditMovementDocument> findMovement(String id) {
+        return Single.fromCallable(() -> loadMovement(id)).subscribeOn(Schedulers.io());
+    }
+
+    /**
+     * Replaces the recorded payer. Amount, product, and type stay unchanged.
+     *
+     * @param id movement identifier
+     * @param payerCustomerId customer who paid
+     * @return updated movement
+     */
+    public Single<CreditMovementDocument> updateMovement(String id, String payerCustomerId) {
+        return Single.fromCallable(() -> {
+            CreditMovementDocument movement = loadMovement(id);
+            if (payerCustomerId != null) {
+                movement.setPayerCustomerId(payerCustomerId);
+            }
+            return movements.save(movement);
+        }).subscribeOn(Schedulers.io());
+    }
+
+    /**
+     * Deletes a movement and reverses its effect on the loan or card balance.
+     *
+     * @param id movement identifier
+     * @return completion
+     */
+    public Single<Boolean> deleteMovement(String id) {
+        return Single.fromCallable(() -> {
+            CreditMovementDocument movement = loadMovement(id);
+            reverse(movement);
+            movements.delete(movement);
+            return true;
+        }).subscribeOn(Schedulers.io());
+    }
+
+    /**
      * @param productKind LOAN or CARD
      * @param from interval start
      * @param to interval end
@@ -320,7 +390,75 @@ public class CreditService {
         return loanOverdue || cardOverdue;
     }
 
-    private void saveMovement(String productId, String kind, String type, BigDecimal amount, String payer, String operationId) {
+    private CreditMovementDocument postMovement(String productId, String productKind, String type, BigDecimal amount,
+                                               String payerCustomerId) {
+        if ("LOAN".equals(productKind)) {
+            if (!"PAYMENT".equals(type)) {
+                throw new IllegalArgumentException("A loan movement must be a payment");
+            }
+            requirePayer(payerCustomerId);
+            LoanDocument loan = loadLoan(productId);
+            CreditRules.checkPayment(loan.getOutstanding(), amount);
+            loan.setOutstanding(loan.getOutstanding().subtract(amount));
+            loans.save(loan);
+            return saveMovement(loan.getId(), "LOAN", "PAYMENT", amount, payerCustomerId, null);
+        }
+        if (!"CARD".equals(productKind)) {
+            throw new IllegalArgumentException("Product kind must be LOAN or CARD");
+        }
+        if ("CHARGE".equals(type)) {
+            CreditCardDocument card = loadCard(productId);
+            CreditRules.checkCharge(card.getAvailable(), amount);
+            card.setAvailable(card.getAvailable().subtract(amount));
+            cards.save(card);
+            return saveMovement(card.getId(), "CARD", "CHARGE", amount, card.getCustomerId(), null);
+        }
+        if ("PAYMENT".equals(type)) {
+            requirePayer(payerCustomerId);
+            CreditCardDocument card = loadCard(productId);
+            BigDecimal used = card.getCreditLimit().subtract(card.getAvailable());
+            CreditRules.checkPayment(used, amount);
+            card.setAvailable(card.getAvailable().add(amount));
+            cards.save(card);
+            return saveMovement(card.getId(), "CARD", "PAYMENT", amount, payerCustomerId, null);
+        }
+        throw new IllegalArgumentException("Credit movement type must be CHARGE or PAYMENT");
+    }
+
+    private void reverse(CreditMovementDocument movement) {
+        if ("LOAN".equals(movement.getProductKind())) {
+            if (!"PAYMENT".equals(movement.getType())) {
+                throw new IllegalArgumentException("This loan movement cannot be reversed");
+            }
+            LoanDocument loan = loadLoan(movement.getProductId());
+            loan.setOutstanding(loan.getOutstanding().add(movement.getAmount()));
+            loans.save(loan);
+            return;
+        }
+        if (!"CARD".equals(movement.getProductKind())) {
+            throw new IllegalArgumentException("Product kind must be LOAN or CARD");
+        }
+        CreditCardDocument card = loadCard(movement.getProductId());
+        if ("CHARGE".equals(movement.getType())) {
+            BigDecimal restored = card.getAvailable().add(movement.getAmount());
+            if (restored.compareTo(card.getCreditLimit()) > 0) {
+                throw new IllegalArgumentException("Reversing this charge would exceed the credit limit");
+            }
+            card.setAvailable(restored);
+        } else if ("PAYMENT".equals(movement.getType())) {
+            BigDecimal reduced = card.getAvailable().subtract(movement.getAmount());
+            if (reduced.signum() < 0) {
+                throw new IllegalArgumentException("Reversing this payment would exceed the used credit");
+            }
+            card.setAvailable(reduced);
+        } else {
+            throw new IllegalArgumentException("Credit movement type cannot be reversed");
+        }
+        cards.save(card);
+    }
+
+    private CreditMovementDocument saveMovement(String productId, String kind, String type, BigDecimal amount, String payer,
+                                               String operationId) {
         CreditMovementDocument movement = new CreditMovementDocument();
         movement.setProductId(productId);
         movement.setProductKind(kind);
@@ -329,7 +467,17 @@ public class CreditService {
         movement.setPayerCustomerId(payer);
         movement.setOperationId(operationId);
         movement.setCreatedAt(Instant.now());
-        movements.save(movement);
+        return movements.save(movement);
+    }
+
+    private CreditMovementDocument loadMovement(String id) {
+        return movements.findById(id).orElseThrow(() -> new IllegalArgumentException("Credit movement was not found"));
+    }
+
+    private void requirePayer(String payerCustomerId) {
+        if (payerCustomerId == null || payerCustomerId.isBlank()) {
+            throw new IllegalArgumentException("A payment must identify the customer who pays");
+        }
     }
 
     private LoanDocument loadLoan(String id) {

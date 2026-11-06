@@ -163,6 +163,49 @@ public class CreditController implements CreditApi {
      * {@inheritDoc}
      */
     @Override
+    public ResponseEntity<CreditMovementDocument> createMovement(CreditMovementRequest request) {
+        return credits.createMovement(request.productId(), request.productKind(), request.type(), request.amount(),
+                        request.payerCustomerId())
+                .map(body -> ResponseEntity.status(HttpStatus.CREATED).body(body))
+                .blockingGet();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ResponseEntity<List<CreditMovementDocument>> listMovements(String productId) {
+        return credits.findMovements(productId).map(ResponseEntity::ok).blockingGet();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ResponseEntity<CreditMovementDocument> getMovement(String id) {
+        return credits.findMovement(id).map(ResponseEntity::ok).blockingGet();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ResponseEntity<CreditMovementDocument> updateMovement(String id, CreditMovementUpdate request) {
+        return credits.updateMovement(id, request.payerCustomerId()).map(ResponseEntity::ok).blockingGet();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ResponseEntity<Void> deleteMovement(String id) {
+        return credits.deleteMovement(id).map(done -> ResponseEntity.noContent().<Void>build()).blockingGet();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public ResponseEntity<List<CreditMovementDocument>> report(String productKind, Instant from, Instant to) {
         return credits.report(productKind, from, to).map(ResponseEntity::ok).blockingGet();
     }
@@ -222,5 +265,22 @@ public class CreditController implements CreditApi {
      * @param exists whether the customer has an active credit card
      */
     public record CreditCardFlag(boolean exists) {
+    }
+
+    /**
+     * @param productId loan or card identifier
+     * @param productKind LOAN or CARD
+     * @param type CHARGE or PAYMENT
+     * @param amount money amount
+     * @param payerCustomerId customer who pays; required for a payment
+     */
+    public record CreditMovementRequest(@NotBlank String productId, @NotBlank String productKind, @NotBlank String type,
+                                       @NotNull BigDecimal amount, String payerCustomerId) {
+    }
+
+    /**
+     * @param payerCustomerId replacement payer
+     */
+    public record CreditMovementUpdate(String payerCustomerId) {
     }
 }

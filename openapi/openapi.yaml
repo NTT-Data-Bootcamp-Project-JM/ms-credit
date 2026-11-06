@@ -4,7 +4,7 @@ info:
   version: 1.0.0
   description: >
     Source of the credit API. The server interface is generated from this file.
-    Loans, credit cards, payments, and debt status.
+    Loans, credit cards, credit movements, payments, and debt status.
 paths:
   /api/v1/loans:
     post:
@@ -306,6 +306,102 @@ paths:
                 $ref: "#/components/schemas/CreditCardFlag"
         "401":
           $ref: "#/components/responses/Unauthorized"
+  /api/v1/credit-movements:
+    post:
+      tags: [Credit]
+      operationId: createMovement
+      summary: Record a credit movement and apply it to the product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreditMovementRequest"
+      responses:
+        "201":
+          description: Created movement
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditMovement"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+    get:
+      tags: [Credit]
+      operationId: listMovements
+      summary: List credit movements
+      parameters:
+        - name: productId
+          in: query
+          required: false
+          schema:
+            type: string
+          description: When present, only movements of this loan or card are returned.
+      responses:
+        "200":
+          description: Credit movements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CreditMovement"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/credit-movements/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Credit]
+      operationId: getMovement
+      summary: Read one credit movement
+      responses:
+        "200":
+          description: The movement
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditMovement"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+    put:
+      tags: [Credit]
+      operationId: updateMovement
+      summary: Replace the payer of a credit movement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreditMovementUpdate"
+      responses:
+        "200":
+          description: Updated movement
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditMovement"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+    delete:
+      tags: [Credit]
+      operationId: deleteMovement
+      summary: Delete a credit movement and reverse its effect
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
   /api/v1/credit-reports:
     get:
       tags: [Credit]
@@ -490,6 +586,28 @@ components:
           type: string
           format: date
         status:
+          type: string
+    CreditMovementRequest:
+      type: object
+      required: [productId, productKind, type, amount]
+      properties:
+        productId:
+          type: string
+        productKind:
+          type: string
+          description: LOAN or CARD
+        type:
+          type: string
+          description: PAYMENT for a loan. CHARGE or PAYMENT for a card.
+        amount:
+          type: number
+        payerCustomerId:
+          type: string
+          description: Required for a payment. A charge uses the card owner.
+    CreditMovementUpdate:
+      type: object
+      properties:
+        payerCustomerId:
           type: string
     CreditMovement:
       type: object
