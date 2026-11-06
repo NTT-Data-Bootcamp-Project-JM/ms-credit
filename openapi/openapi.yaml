@@ -1,411 +1,521 @@
-openapi: 3.1.0
+openapi: 3.0.3
 info:
   title: Credit
-  description: "Loans, credit cards, payments, and debt status."
   version: 1.0.0
-servers:
-- url: http://127.0.0.1:8084
-  description: Generated server url
-security:
-- bearer-jwt: []
+  description: >
+    Source of the credit API. The server interface is generated from this file.
+    Loans, credit cards, payments, and debt status.
 paths:
-  /api/v1/loans/{id}:
-    get:
-      tags:
-      - credit-controller
-      operationId: loan
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/SingleResponseEntityLoanDocument"
-    put:
-      tags:
-      - credit-controller
-      operationId: updateLoan
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/DueDateRequest"
-        required: true
-      responses:
-        "200":
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/SingleResponseEntityLoanDocument"
-    delete:
-      tags:
-      - credit-controller
-      operationId: deleteLoan
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/SingleResponseEntityVoid"
-  /api/v1/credit-cards/{id}:
-    get:
-      tags:
-      - credit-controller
-      operationId: card
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/SingleResponseEntityCreditCardDocument"
-    put:
-      tags:
-      - credit-controller
-      operationId: updateCard
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/DueDateRequest"
-        required: true
-      responses:
-        "200":
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/SingleResponseEntityCreditCardDocument"
-    delete:
-      tags:
-      - credit-controller
-      operationId: deleteCard
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/SingleResponseEntityVoid"
   /api/v1/loans:
-    get:
-      tags:
-      - credit-controller
-      operationId: loans
-      responses:
-        "200":
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/SingleResponseEntityListLoanDocument"
     post:
-      tags:
-      - credit-controller
+      tags: [Credit]
       operationId: openLoan
+      summary: Open a loan
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/LoanRequest"
-        required: true
+      responses:
+        "201":
+          description: Created loan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Loan"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+    get:
+      tags: [Credit]
+      operationId: loans
+      summary: List loans
       responses:
         "200":
-          description: OK
+          description: All loans
           content:
-            '*/*':
+            application/json:
               schema:
-                $ref: "#/components/schemas/SingleResponseEntityLoanDocument"
-  /api/v1/loans/{id}/payments:
-    post:
-      tags:
-      - credit-controller
-      operationId: payLoan
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+                type: array
+                items:
+                  $ref: "#/components/schemas/Loan"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/loans/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Credit]
+      operationId: loan
+      summary: Read one loan
+      responses:
+        "200":
+          description: The loan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Loan"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+    put:
+      tags: [Credit]
+      operationId: updateLoan
+      summary: Replace the loan due date
       requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DueDateRequest"
+      responses:
+        "200":
+          description: Updated loan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Loan"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+    delete:
+      tags: [Credit]
+      operationId: deleteLoan
+      summary: Delete a loan
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+  /api/v1/loans/{id}/payments:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [Credit]
+      operationId: payLoan
+      summary: Pay a loan
+      requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/PaymentRequest"
-        required: true
       responses:
         "200":
-          description: OK
+          description: Loan after the payment
           content:
-            '*/*':
+            application/json:
               schema:
-                $ref: "#/components/schemas/SingleResponseEntityLoanDocument"
+                $ref: "#/components/schemas/Loan"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
   /api/v1/credit-cards:
-    get:
-      tags:
-      - credit-controller
-      operationId: cards
-      responses:
-        "200":
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/SingleResponseEntityListCreditCardDocument"
     post:
-      tags:
-      - credit-controller
+      tags: [Credit]
       operationId: openCard
+      summary: Open a credit card
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/CardRequest"
-        required: true
+      responses:
+        "201":
+          description: Created card
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditCard"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+    get:
+      tags: [Credit]
+      operationId: cards
+      summary: List credit cards
       responses:
         "200":
-          description: OK
+          description: All cards
           content:
-            '*/*':
+            application/json:
               schema:
-                $ref: "#/components/schemas/SingleResponseEntityCreditCardDocument"
-  /api/v1/credit-cards/{id}/payments:
-    post:
-      tags:
-      - credit-controller
-      operationId: payCard
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+                type: array
+                items:
+                  $ref: "#/components/schemas/CreditCard"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/credit-cards/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Credit]
+      operationId: card
+      summary: Read one credit card
+      responses:
+        "200":
+          description: The card
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditCard"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+    put:
+      tags: [Credit]
+      operationId: updateCard
+      summary: Replace the card due date
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PaymentRequest"
-        required: true
+              $ref: "#/components/schemas/DueDateRequest"
       responses:
         "200":
-          description: OK
+          description: Updated card
           content:
-            '*/*':
+            application/json:
               schema:
-                $ref: "#/components/schemas/SingleResponseEntityCreditCardDocument"
+                $ref: "#/components/schemas/CreditCard"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+    delete:
+      tags: [Credit]
+      operationId: deleteCard
+      summary: Delete a credit card
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
   /api/v1/credit-cards/{id}/charges:
+    parameters:
+      - $ref: "#/components/parameters/Id"
     post:
-      tags:
-      - credit-controller
+      tags: [Credit]
       operationId: charge
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+      summary: Charge a credit card
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/AmountRequest"
-        required: true
       responses:
         "200":
-          description: OK
+          description: Card after the charge
           content:
-            '*/*':
+            application/json:
               schema:
-                $ref: "#/components/schemas/SingleResponseEntityCreditCardDocument"
+                $ref: "#/components/schemas/CreditCard"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+  /api/v1/credit-cards/{id}/payments:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [Credit]
+      operationId: payCard
+      summary: Pay a credit card
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentRequest"
+      responses:
+        "200":
+          description: Card after the payment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditCard"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
   /api/v1/debt-status/{customerId}:
     get:
-      tags:
-      - credit-controller
+      tags: [Credit]
       operationId: debt
+      summary: Read overdue status
       parameters:
-      - name: customerId
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         "200":
-          description: OK
+          description: Whether the customer has overdue credit
           content:
-            '*/*':
+            application/json:
               schema:
-                $ref: "#/components/schemas/SingleResponseEntityMapStringObject"
+                $ref: "#/components/schemas/DebtStatus"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/v1/debt-status/{customerId}/credit-card:
     get:
-      tags:
-      - credit-controller
+      tags: [Credit]
       operationId: cardFlag
+      summary: Read whether an active credit card exists
       parameters:
-      - name: customerId
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         "200":
-          description: OK
+          description: Active credit card flag
           content:
-            '*/*':
+            application/json:
               schema:
-                $ref: "#/components/schemas/SingleResponseEntityMapStringObject"
+                $ref: "#/components/schemas/CreditCardFlag"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/v1/credit-reports:
     get:
-      tags:
-      - credit-controller
+      tags: [Credit]
       operationId: report
+      summary: List credit movements in an interval
       parameters:
-      - name: productKind
-        in: query
-        required: true
-        schema:
-          type: string
-      - name: from
-        in: query
-        required: true
-        schema:
-          type: string
-          format: date-time
-      - name: to
-        in: query
-        required: true
-        schema:
-          type: string
-          format: date-time
+        - name: productKind
+          in: query
+          required: true
+          schema:
+            type: string
+            description: LOAN or CARD
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
       responses:
         "200":
-          description: OK
+          description: Movements in the interval
           content:
-            '*/*':
+            application/json:
               schema:
-                $ref: "#/components/schemas/SingleResponseEntityListCreditMovementDocument"
+                type: array
+                items:
+                  $ref: "#/components/schemas/CreditMovement"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/v1/credit-reports/credit-cards/{id}/last:
+    parameters:
+      - $ref: "#/components/parameters/Id"
     get:
-      tags:
-      - credit-controller
+      tags: [Credit]
       operationId: last
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+      summary: Ten newest credit-card movements
       responses:
         "200":
-          description: OK
+          description: Newest movements
           content:
-            '*/*':
+            application/json:
               schema:
-                $ref: "#/components/schemas/SingleResponseEntityListCreditMovementDocument"
+                type: array
+                items:
+                  $ref: "#/components/schemas/CreditMovement"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
 components:
-  schemas:
-    DueDateRequest:
-      type: object
-      properties:
-        dueDate:
-          type: string
-          format: date
-      required:
-      - dueDate
-    SingleResponseEntityLoanDocument: {}
-    SingleResponseEntityCreditCardDocument: {}
-    LoanRequest:
-      type: object
-      properties:
-        customerId:
-          type: string
-          minLength: 1
-        principal:
-          type: number
-        dueDate:
-          type: string
-          format: date
-      required:
-      - customerId
-      - dueDate
-      - principal
-    PaymentRequest:
-      type: object
-      properties:
-        amount:
-          type: number
-        payerCustomerId:
-          type: string
-          minLength: 1
-      required:
-      - amount
-      - payerCustomerId
-    CardRequest:
-      type: object
-      properties:
-        customerId:
-          type: string
-          minLength: 1
-        creditLimit:
-          type: number
-        paymentDueDate:
-          type: string
-          format: date
-      required:
-      - creditLimit
-      - customerId
-      - paymentDueDate
-    AmountRequest:
-      type: object
-      properties:
-        amount:
-          type: number
-      required:
-      - amount
-    SingleResponseEntityListLoanDocument: {}
-    SingleResponseEntityMapStringObject: {}
-    SingleResponseEntityListCreditMovementDocument: {}
-    SingleResponseEntityListCreditCardDocument: {}
-    SingleResponseEntityVoid: {}
   securitySchemes:
     bearer-jwt:
       type: http
       scheme: bearer
       bearerFormat: JWT
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    BadRequest:
+      description: The body failed validation.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: A valid bearer token is required.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unprocessable:
+      description: A business rule rejected the request.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    LoanRequest:
+      type: object
+      required: [customerId, principal, dueDate]
+      properties:
+        customerId:
+          type: string
+        principal:
+          type: number
+        dueDate:
+          type: string
+          format: date
+    CardRequest:
+      type: object
+      required: [customerId, creditLimit, paymentDueDate]
+      properties:
+        customerId:
+          type: string
+        creditLimit:
+          type: number
+        paymentDueDate:
+          type: string
+          format: date
+    PaymentRequest:
+      type: object
+      required: [amount, payerCustomerId]
+      properties:
+        amount:
+          type: number
+        payerCustomerId:
+          type: string
+    AmountRequest:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          type: number
+    DueDateRequest:
+      type: object
+      required: [dueDate]
+      properties:
+        dueDate:
+          type: string
+          format: date
+    DebtStatus:
+      type: object
+      required: [customerId, overdue]
+      properties:
+        customerId:
+          type: string
+        overdue:
+          type: boolean
+    CreditCardFlag:
+      type: object
+      required: [exists]
+      properties:
+        exists:
+          type: boolean
+    Loan:
+      type: object
+      properties:
+        id:
+          type: string
+        loanNumber:
+          type: string
+        customerId:
+          type: string
+        customerType:
+          type: string
+        principal:
+          type: number
+        outstanding:
+          type: number
+        dueDate:
+          type: string
+          format: date
+        status:
+          type: string
+    CreditCard:
+      type: object
+      properties:
+        id:
+          type: string
+        cardNumber:
+          type: string
+        customerId:
+          type: string
+        holderType:
+          type: string
+        creditLimit:
+          type: number
+        available:
+          type: number
+        paymentDueDate:
+          type: string
+          format: date
+        status:
+          type: string
+    CreditMovement:
+      type: object
+      properties:
+        id:
+          type: string
+        productId:
+          type: string
+        productKind:
+          type: string
+        type:
+          type: string
+        amount:
+          type: number
+        payerCustomerId:
+          type: string
+        operationId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    ErrorResponse:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+security:
+  - bearer-jwt: []
