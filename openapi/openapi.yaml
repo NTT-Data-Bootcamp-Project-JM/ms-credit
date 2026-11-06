@@ -1,0 +1,411 @@
+openapi: 3.1.0
+info:
+  title: Credit
+  description: "Loans, credit cards, payments, and debt status."
+  version: 1.0.0
+servers:
+- url: http://127.0.0.1:8084
+  description: Generated server url
+security:
+- bearer-jwt: []
+paths:
+  /api/v1/loans/{id}:
+    get:
+      tags:
+      - credit-controller
+      operationId: loan
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SingleResponseEntityLoanDocument"
+    put:
+      tags:
+      - credit-controller
+      operationId: updateLoan
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DueDateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SingleResponseEntityLoanDocument"
+    delete:
+      tags:
+      - credit-controller
+      operationId: deleteLoan
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SingleResponseEntityVoid"
+  /api/v1/credit-cards/{id}:
+    get:
+      tags:
+      - credit-controller
+      operationId: card
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SingleResponseEntityCreditCardDocument"
+    put:
+      tags:
+      - credit-controller
+      operationId: updateCard
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DueDateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SingleResponseEntityCreditCardDocument"
+    delete:
+      tags:
+      - credit-controller
+      operationId: deleteCard
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SingleResponseEntityVoid"
+  /api/v1/loans:
+    get:
+      tags:
+      - credit-controller
+      operationId: loans
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SingleResponseEntityListLoanDocument"
+    post:
+      tags:
+      - credit-controller
+      operationId: openLoan
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoanRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SingleResponseEntityLoanDocument"
+  /api/v1/loans/{id}/payments:
+    post:
+      tags:
+      - credit-controller
+      operationId: payLoan
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SingleResponseEntityLoanDocument"
+  /api/v1/credit-cards:
+    get:
+      tags:
+      - credit-controller
+      operationId: cards
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SingleResponseEntityListCreditCardDocument"
+    post:
+      tags:
+      - credit-controller
+      operationId: openCard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SingleResponseEntityCreditCardDocument"
+  /api/v1/credit-cards/{id}/payments:
+    post:
+      tags:
+      - credit-controller
+      operationId: payCard
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SingleResponseEntityCreditCardDocument"
+  /api/v1/credit-cards/{id}/charges:
+    post:
+      tags:
+      - credit-controller
+      operationId: charge
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AmountRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SingleResponseEntityCreditCardDocument"
+  /api/v1/debt-status/{customerId}:
+    get:
+      tags:
+      - credit-controller
+      operationId: debt
+      parameters:
+      - name: customerId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SingleResponseEntityMapStringObject"
+  /api/v1/debt-status/{customerId}/credit-card:
+    get:
+      tags:
+      - credit-controller
+      operationId: cardFlag
+      parameters:
+      - name: customerId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SingleResponseEntityMapStringObject"
+  /api/v1/credit-reports:
+    get:
+      tags:
+      - credit-controller
+      operationId: report
+      parameters:
+      - name: productKind
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SingleResponseEntityListCreditMovementDocument"
+  /api/v1/credit-reports/credit-cards/{id}/last:
+    get:
+      tags:
+      - credit-controller
+      operationId: last
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SingleResponseEntityListCreditMovementDocument"
+components:
+  schemas:
+    DueDateRequest:
+      type: object
+      properties:
+        dueDate:
+          type: string
+          format: date
+      required:
+      - dueDate
+    SingleResponseEntityLoanDocument: {}
+    SingleResponseEntityCreditCardDocument: {}
+    LoanRequest:
+      type: object
+      properties:
+        customerId:
+          type: string
+          minLength: 1
+        principal:
+          type: number
+        dueDate:
+          type: string
+          format: date
+      required:
+      - customerId
+      - dueDate
+      - principal
+    PaymentRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+        payerCustomerId:
+          type: string
+          minLength: 1
+      required:
+      - amount
+      - payerCustomerId
+    CardRequest:
+      type: object
+      properties:
+        customerId:
+          type: string
+          minLength: 1
+        creditLimit:
+          type: number
+        paymentDueDate:
+          type: string
+          format: date
+      required:
+      - creditLimit
+      - customerId
+      - paymentDueDate
+    AmountRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+      required:
+      - amount
+    SingleResponseEntityListLoanDocument: {}
+    SingleResponseEntityMapStringObject: {}
+    SingleResponseEntityListCreditMovementDocument: {}
+    SingleResponseEntityListCreditCardDocument: {}
+    SingleResponseEntityVoid: {}
+  securitySchemes:
+    bearer-jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
