@@ -1,13 +1,13 @@
-package com.nttdata.bank.credit.application;
+package com.nttdata.bank.credit.service;
 
-import com.nttdata.bank.credit.domain.CreditCardDocument;
-import com.nttdata.bank.credit.domain.CreditCardRepository;
-import com.nttdata.bank.credit.domain.CreditMovementDocument;
-import com.nttdata.bank.credit.domain.CreditMovementRepository;
-import com.nttdata.bank.credit.domain.CreditRules;
-import com.nttdata.bank.credit.domain.LoanDocument;
-import com.nttdata.bank.credit.domain.LoanRepository;
-import com.nttdata.bank.credit.infrastructure.CustomerClient;
+import com.nttdata.bank.credit.domain.model.CreditCardDocument;
+import com.nttdata.bank.credit.domain.repository.CreditCardRepository;
+import com.nttdata.bank.credit.domain.model.CreditMovementDocument;
+import com.nttdata.bank.credit.domain.repository.CreditMovementRepository;
+import com.nttdata.bank.credit.service.validation.CreditValidation;
+import com.nttdata.bank.credit.domain.model.LoanDocument;
+import com.nttdata.bank.credit.domain.repository.LoanRepository;
+import com.nttdata.bank.credit.infrastructure.webclient.CustomerWebClient;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import org.springframework.stereotype.Service;
@@ -31,7 +31,7 @@ public class CreditService {
     private final LoanRepository loans;
     private final CreditCardRepository cards;
     private final CreditMovementRepository movements;
-    private final CustomerClient customers;
+    private final CustomerWebClient customers;
 
     /**
      * @param loans loan collection
@@ -40,7 +40,7 @@ public class CreditService {
      * @param customers customer lookup
      */
     public CreditService(LoanRepository loans, CreditCardRepository cards, CreditMovementRepository movements,
-                         CustomerClient customers) {
+                         CustomerWebClient customers) {
         this.loans = loans;
         this.cards = cards;
         this.movements = movements;
@@ -58,11 +58,11 @@ public class CreditService {
     public Single<LoanDocument> openLoan(String customerId, BigDecimal principal, LocalDate dueDate) {
         return Single.fromCallable(() -> {
             requirePositive(principal);
-            CreditRules.checkNoOverdueDebt(isOverdue(customerId));
+            CreditValidation.checkNoOverdueDebt(isOverdue(customerId));
             String type = customers.customerType(customerId);
             long existing = loans.countByCustomerIdAndCustomerTypeAndStatus(customerId, PERSONAL, ACTIVE);
             if (PERSONAL.equals(type)) {
-                CreditRules.checkNewPersonalLoan(type, existing);
+                CreditValidation.checkNewPersonalLoan(type, existing);
             }
             LoanDocument loan = new LoanDocument();
             loan.setLoanNumber(UUID.randomUUID().toString().substring(0, 12));
@@ -146,7 +146,7 @@ public class CreditService {
     public Single<CreditCardDocument> openCard(String customerId, BigDecimal limit, LocalDate paymentDueDate) {
         return Single.fromCallable(() -> {
             requirePositive(limit);
-            CreditRules.checkNoOverdueDebt(isOverdue(customerId));
+            CreditValidation.checkNoOverdueDebt(isOverdue(customerId));
             String type = customers.customerType(customerId);
             CreditCardDocument card = new CreditCardDocument();
             card.setCardNumber(UUID.randomUUID().toString().replace("-", "").substring(0, 16));
@@ -215,7 +215,7 @@ public class CreditService {
     public Single<CreditCardDocument> charge(String id, BigDecimal amount) {
         return Single.fromCallable(() -> {
             CreditCardDocument card = loadCard(id);
-            CreditRules.checkCharge(card.getAvailable(), amount);
+            CreditValidation.checkCharge(card.getAvailable(), amount);
             card.setAvailable(card.getAvailable().subtract(amount));
             cards.save(card);
             saveMovement(card.getId(), "CARD", "CHARGE", amount, card.getCustomerId(), null);
@@ -363,7 +363,7 @@ public class CreditService {
 
     private LoanDocument applyLoanPayment(String id, BigDecimal amount, String payerCustomerId, String operationId) {
         LoanDocument loan = loadLoan(id);
-        CreditRules.checkPayment(loan.getOutstanding(), amount);
+        CreditValidation.checkPayment(loan.getOutstanding(), amount);
         loan.setOutstanding(loan.getOutstanding().subtract(amount));
         loans.save(loan);
         saveMovement(loan.getId(), "LOAN", "PAYMENT", amount, payerCustomerId, operationId);
@@ -373,7 +373,7 @@ public class CreditService {
     private CreditCardDocument applyCardPayment(String id, BigDecimal amount, String payerCustomerId, String operationId) {
         CreditCardDocument card = loadCard(id);
         BigDecimal used = card.getCreditLimit().subtract(card.getAvailable());
-        CreditRules.checkPayment(used, amount);
+        CreditValidation.checkPayment(used, amount);
         card.setAvailable(card.getAvailable().add(amount));
         cards.save(card);
         saveMovement(card.getId(), "CARD", "PAYMENT", amount, payerCustomerId, operationId);
@@ -383,7 +383,7 @@ public class CreditService {
     private boolean isOverdue(String customerId) {
         LocalDate today = LocalDate.now(ZoneOffset.UTC);
         boolean loanOverdue = loans.findByCustomerId(customerId).stream()
-                .anyMatch(loan -> CreditRules.loanOverdue(loan.getDueDate(), loan.getOutstanding(), today));
+                .anyMatch(loan -> CreditValidation.loanOverdue(loan.getDueDate(), loan.getOutstanding(), today));
         boolean cardOverdue = cards.findByCustomerId(customerId).stream()
                 .anyMatch(card -> card.getPaymentDueDate().isBefore(today)
                         && card.getAvailable().compareTo(card.getCreditLimit()) < 0);
@@ -398,7 +398,7 @@ public class CreditService {
             }
             requirePayer(payerCustomerId);
             LoanDocument loan = loadLoan(productId);
-            CreditRules.checkPayment(loan.getOutstanding(), amount);
+            CreditValidation.checkPayment(loan.getOutstanding(), amount);
             loan.setOutstanding(loan.getOutstanding().subtract(amount));
             loans.save(loan);
             return saveMovement(loan.getId(), "LOAN", "PAYMENT", amount, payerCustomerId, null);
@@ -408,7 +408,7 @@ public class CreditService {
         }
         if ("CHARGE".equals(type)) {
             CreditCardDocument card = loadCard(productId);
-            CreditRules.checkCharge(card.getAvailable(), amount);
+            CreditValidation.checkCharge(card.getAvailable(), amount);
             card.setAvailable(card.getAvailable().subtract(amount));
             cards.save(card);
             return saveMovement(card.getId(), "CARD", "CHARGE", amount, card.getCustomerId(), null);
@@ -417,7 +417,7 @@ public class CreditService {
             requirePayer(payerCustomerId);
             CreditCardDocument card = loadCard(productId);
             BigDecimal used = card.getCreditLimit().subtract(card.getAvailable());
-            CreditRules.checkPayment(used, amount);
+            CreditValidation.checkPayment(used, amount);
             card.setAvailable(card.getAvailable().add(amount));
             cards.save(card);
             return saveMovement(card.getId(), "CARD", "PAYMENT", amount, payerCustomerId, null);

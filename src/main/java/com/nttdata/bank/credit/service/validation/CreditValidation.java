@@ -1,4 +1,4 @@
-package com.nttdata.bank.credit.domain;
+package com.nttdata.bank.credit.service.validation;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -7,9 +7,9 @@ import java.time.LocalDate;
  * Credit rules that stay free of Spring so they can be unit tested.
  * A credit card is not the single personal loan.
  */
-public final class CreditRules {
+public final class CreditValidation {
 
-    private CreditRules() {
+    private CreditValidation() {
     }
 
     /**

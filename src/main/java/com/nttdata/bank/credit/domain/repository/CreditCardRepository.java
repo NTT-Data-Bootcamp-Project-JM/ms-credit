@@ -1,4 +1,6 @@
-package com.nttdata.bank.credit.domain;
+package com.nttdata.bank.credit.domain.repository;
+
+import com.nttdata.bank.credit.domain.model.CreditCardDocument;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 

@@ -20,12 +20,17 @@
         <springdoc.version>2.8.9</springdoc.version>
         <openapi-generator.version>7.13.0</openapi-generator.version>
         <jacoco.version>0.8.12</jacoco.version>
+        <mapstruct.version>1.6.3</mapstruct.version>
         <resilience4j.version>2.2.0</resilience4j.version>
     </properties>
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -101,6 +106,11 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
@@ -138,6 +148,16 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
+                        </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok-mapstruct-binding</artifactId>
+                            <version>0.2.0</version>
+                        </path>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
@@ -178,7 +198,7 @@
                             <generateSupportingFiles>false</generateSupportingFiles>
                             <generateApiTests>false</generateApiTests>
                             <generateModelTests>false</generateModelTests>
-                            <schemaMappings>LoanRequest=com.nttdata.bank.credit.api.CreditController.LoanRequest,CardRequest=com.nttdata.bank.credit.api.CreditController.CardRequest,PaymentRequest=com.nttdata.bank.credit.api.CreditController.PaymentRequest,AmountRequest=com.nttdata.bank.credit.api.CreditController.AmountRequest,DueDateRequest=com.nttdata.bank.credit.api.CreditController.DueDateRequest,CreditMovementRequest=com.nttdata.bank.credit.api.CreditController.CreditMovementRequest,CreditMovementUpdate=com.nttdata.bank.credit.api.CreditController.CreditMovementUpdate,DebtStatus=com.nttdata.bank.credit.api.CreditController.DebtStatus,CreditCardFlag=com.nttdata.bank.credit.api.CreditController.CreditCardFlag,Loan=com.nttdata.bank.credit.domain.LoanDocument,CreditCard=com.nttdata.bank.credit.domain.CreditCardDocument,CreditMovement=com.nttdata.bank.credit.domain.CreditMovementDocument,ErrorResponse=com.nttdata.bank.credit.api.CreditExceptionHandler.ErrorBody</schemaMappings>
+                            <schemaMappings>LoanRequest=com.nttdata.bank.credit.api.dto.LoanRequest,CardRequest=com.nttdata.bank.credit.api.dto.CardRequest,PaymentRequest=com.nttdata.bank.credit.api.dto.PaymentRequest,AmountRequest=com.nttdata.bank.credit.api.dto.AmountRequest,DueDateRequest=com.nttdata.bank.credit.api.dto.DueDateRequest,CreditMovementRequest=com.nttdata.bank.credit.api.dto.CreditMovementRequest,CreditMovementUpdate=com.nttdata.bank.credit.api.dto.CreditMovementUpdate,DebtStatus=com.nttdata.bank.credit.api.dto.DebtStatus,CreditCardFlag=com.nttdata.bank.credit.api.dto.CreditCardFlag,Loan=com.nttdata.bank.credit.api.dto.LoanResponse,CreditCard=com.nttdata.bank.credit.api.dto.CreditCardResponse,CreditMovement=com.nttdata.bank.credit.api.dto.CreditMovementResponse,ErrorResponse=com.nttdata.bank.credit.api.exception.CreditExceptionHandler.ErrorBody</schemaMappings>
                             <typeMappings>DateTime=java.time.Instant</typeMappings>
                             <importMappings>Instant=java.time.Instant</importMappings>
                             <configOptions>

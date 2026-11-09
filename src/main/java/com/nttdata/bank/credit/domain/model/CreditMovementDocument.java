@@ -1,4 +1,4 @@
-package com.nttdata.bank.credit.domain;
+package com.nttdata.bank.credit.domain.model;
 
 import lombok.Getter;
 import lombok.Setter;

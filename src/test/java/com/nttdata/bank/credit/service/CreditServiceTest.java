@@ -1,12 +1,12 @@
-package com.nttdata.bank.credit.application;
+package com.nttdata.bank.credit.service;
 
-import com.nttdata.bank.credit.domain.CreditCardDocument;
-import com.nttdata.bank.credit.domain.CreditCardRepository;
-import com.nttdata.bank.credit.domain.CreditMovementDocument;
-import com.nttdata.bank.credit.domain.CreditMovementRepository;
-import com.nttdata.bank.credit.domain.LoanDocument;
-import com.nttdata.bank.credit.domain.LoanRepository;
-import com.nttdata.bank.credit.infrastructure.CustomerClient;
+import com.nttdata.bank.credit.domain.model.CreditCardDocument;
+import com.nttdata.bank.credit.domain.repository.CreditCardRepository;
+import com.nttdata.bank.credit.domain.model.CreditMovementDocument;
+import com.nttdata.bank.credit.domain.repository.CreditMovementRepository;
+import com.nttdata.bank.credit.domain.model.LoanDocument;
+import com.nttdata.bank.credit.domain.repository.LoanRepository;
+import com.nttdata.bank.credit.infrastructure.webclient.CustomerWebClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -51,7 +51,7 @@ class CreditServiceTest {
     private CreditMovementRepository movements;
 
     @Mock
-    private CustomerClient customers;
+    private CustomerWebClient customers;
 
     private final Map<String, LoanDocument> loanStore = new LinkedHashMap<>();
     private final Map<String, CreditCardDocument> cardStore = new LinkedHashMap<>();

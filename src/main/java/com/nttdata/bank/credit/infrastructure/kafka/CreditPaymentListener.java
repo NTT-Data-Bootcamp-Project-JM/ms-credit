@@ -1,8 +1,8 @@
-package com.nttdata.bank.credit.infrastructure;
+package com.nttdata.bank.credit.infrastructure.kafka;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nttdata.bank.credit.application.CreditService;
+import com.nttdata.bank.credit.service.CreditService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
